@@ -1,24 +1,26 @@
 {
   "expo": {
-    "name": "my-app",
-    "slug": "my-app",
+    "name": "Tuncay AI",
+    "slug": "tuncay-ai",
     "version": "1.0.0",
     "orientation": "portrait",
     "icon": "./assets/icon.png",
-    "userInterfaceStyle": "light",
+    "userInterfaceStyle": "dark",
     "newArchEnabled": true,
     "splash": {
       "image": "./assets/splash-icon.png",
       "resizeMode": "contain",
-      "backgroundColor": "#ffffff"
+      "backgroundColor": "#0b0d10"
     },
     "ios": {
-      "supportsTablet": true
+      "supportsTablet": true,
+      "bundleIdentifier": "com.shelby.tuncayai"
     },
     "android": {
+      "package": "com.shelby.tuncayai",
       "adaptiveIcon": {
         "foregroundImage": "./assets/adaptive-icon.png",
-        "backgroundColor": "#ffffff"
+        "backgroundColor": "#0b0d10"
       },
       "edgeToEdgeEnabled": true,
       "predictiveBackGestureEnabled": false

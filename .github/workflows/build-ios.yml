@@ -1,0 +1,68 @@
+name: Build Unsigned iOS IPA
+
+on:
+  push:
+    branches:
+      - main
+      - master
+  pull_request:
+    branches:
+      - main
+      - master
+  workflow_dispatch: # Allows manual trigger from GitHub UI
+
+jobs:
+  build:
+    name: Build Unsigned IPA
+    runs-on: macos-14 # macOS 14 runner includes Apple Silicon and modern Xcode versions
+    
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: 'npm'
+
+      - name: Install dependencies
+        run: npm install
+
+      - name: Cache CocoaPods
+        uses: actions/cache@v4
+        with:
+          path: ios/Pods
+          key: ${{ runner.os }}-pods-${{ hashFiles('ios/Podfile.lock') }}
+          restore-keys: |
+            ${{ runner.os }}-pods-
+
+      - name: Generate iOS project files (Expo Prebuild)
+        run: npx expo prebuild --platform ios
+        env:
+          EXPO_NO_TELEMETRY: 1
+
+      - name: Build iOS Application (Unsigned)
+        run: |
+          xcodebuild -workspace ios/TuncayAI.xcworkspace \
+                     -scheme TuncayAI \
+                     -configuration Release \
+                     -sdk iphoneos \
+                     -derivedDataPath build \
+                     CODE_SIGNING_ALLOWED=NO \
+                     CODE_SIGNING_REQUIRED=NO \
+                     clean build
+
+      - name: Create Unsigned IPA Package
+        run: |
+          mkdir -p Payload
+          cp -R build/Build/Products/Release-iphoneos/TuncayAI.app Payload/
+          zip -r TuncayAI.ipa Payload
+          
+      - name: Upload IPA Artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: TuncayAI-Unsigned-IPA
+          path: TuncayAI.ipa
+          if-no-files-found: error
+          retention-days: 7
