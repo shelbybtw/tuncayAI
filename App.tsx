@@ -29,6 +29,7 @@ import { Message, ChatSession, ModelType, MODELS } from './src/types';
 import { sendMessageToTuncayAI } from './src/services/api';
 
 const STORAGE_KEY = '@tuncay_chat_sessions_v1';
+const API_KEY_STORAGE_KEY = '@tuncay_api_key';
 
 const generateId = () => {
   return (
@@ -45,6 +46,7 @@ export default function App() {
   const [inputText, setInputText] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const [selectedImage, setSelectedImage] = useState<{ uri: string; base64: string } | null>(null);
+  const [globalApiKey, setGlobalApiKey] = useState('');
   
   // UI Visibilities
   const [isSettingsVisible, setIsSettingsVisible] = useState(false);
@@ -52,10 +54,18 @@ export default function App() {
 
   const flatListRef = useRef<FlatList>(null);
 
-  // 1. Load sessions from AsyncStorage on Mount
+  // 1. Load sessions and API key from AsyncStorage on Mount
   useEffect(() => {
-    loadSessions();
+    loadInitialData();
   }, []);
+
+  const loadInitialData = async () => {
+    try {
+      const storedKey = await AsyncStorage.getItem(API_KEY_STORAGE_KEY);
+      if (storedKey) setGlobalApiKey(storedKey);
+    } catch (e) {}
+    loadSessions();
+  };
 
   const loadSessions = async () => {
     try {
@@ -157,6 +167,14 @@ export default function App() {
     const messageContent = (textToSend || inputText).trim();
     if ((!messageContent && !selectedImage) || isLoading || !currentSession) return;
 
+    if (!globalApiKey) {
+      Alert.alert(
+        'API Açarınız yoxdur',
+        'Zəhmət olmasa yuxarı sağdakı tənzimləmələr ikonuna klikləyərək OpenRouter API açarınızı daxil edin.'
+      );
+      return;
+    }
+
     if (!textToSend) {
       setInputText('');
     }
@@ -212,6 +230,7 @@ export default function App() {
         messages: updatedMessages,
         systemPrompt: currentSession.systemPrompt,
         attachedImageBase64: attachedImage ? attachedImage.base64 : undefined,
+        apiKey: globalApiKey,
       });
 
       // Create Assistant Message
@@ -292,6 +311,15 @@ export default function App() {
     });
     setSessions(updated);
     saveSessions(updated);
+  };
+
+  const handleSaveApiKey = async (key: string) => {
+    setGlobalApiKey(key);
+    try {
+      await AsyncStorage.setItem(API_KEY_STORAGE_KEY, key);
+    } catch (error) {
+      console.error('Failed to save API key:', error);
+    }
   };
 
   const handleClearCurrentChat = () => {
@@ -511,6 +539,8 @@ export default function App() {
           systemPrompt={currentSession.systemPrompt}
           onSaveSystemPrompt={handleUpdateSystemPrompt}
           onClearChat={handleClearCurrentChat}
+          apiKey={globalApiKey}
+          onSaveApiKey={handleSaveApiKey}
         />
       )}
 

@@ -24,6 +24,8 @@ interface SettingsModalProps {
   systemPrompt: string;
   onSaveSystemPrompt: (prompt: string) => void;
   onClearChat: () => void;
+  apiKey: string;
+  onSaveApiKey: (key: string) => void;
 }
 
 export default function SettingsModal({
@@ -34,12 +36,16 @@ export default function SettingsModal({
   systemPrompt,
   onSaveSystemPrompt,
   onClearChat,
+  apiKey,
+  onSaveApiKey,
 }: SettingsModalProps) {
   const [localPrompt, setLocalPrompt] = useState(systemPrompt);
+  const [localApiKey, setLocalApiKey] = useState(apiKey);
 
   const handleClose = () => {
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
     onSaveSystemPrompt(localPrompt);
+    onSaveApiKey(localApiKey.trim());
     onClose();
   };
 
@@ -162,12 +168,22 @@ export default function SettingsModal({
 
             {/* API Key Box */}
             <View style={styles.apiKeySection}>
-              <Text style={styles.apiKeyLabel}>Active OpenRouter API Key</Text>
+              <View style={styles.sectionHeader}>
+                <Ionicons name="key-outline" size={18} color="#f59e0b" />
+                <Text style={styles.sectionTitle}>OpenRouter API Açarınız</Text>
+              </View>
+              <Text style={styles.sectionDesc}>
+                Öz şəxsi API açarınızı daxil edin. Bu açar yalnız sizin telefonunuzda saxlanılır.
+              </Text>
               <View style={styles.apiKeyBox}>
-                <Ionicons name="key-outline" size={14} color="#64748b" />
-                <Text style={styles.apiKeyText} numberOfLines={1}>
-                  sk-or-v1-01c9a3...a6f005790784874a480
-                </Text>
+                <TextInput
+                  style={styles.apiKeyInput}
+                  value={localApiKey}
+                  onChangeText={setLocalApiKey}
+                  placeholder="sk-or-v1-..."
+                  placeholderTextColor="#64748b"
+                  secureTextEntry
+                />
               </View>
             </View>
             
@@ -316,28 +332,19 @@ const styles = StyleSheet.create({
   },
   apiKeySection: {
     marginBottom: 16,
-    alignItems: 'center',
-  },
-  apiKeyLabel: {
-    fontSize: 11,
-    color: '#64748b',
-    marginBottom: 6,
   },
   apiKeyBox: {
-    flexDirection: 'row',
-    alignItems: 'center',
     backgroundColor: '#0f1115',
     borderWidth: 1,
     borderColor: '#1e293b',
-    paddingVertical: 6,
-    paddingHorizontal: 12,
     borderRadius: 8,
   },
-  apiKeyText: {
-    fontFamily: 'Courier',
-    fontSize: 11,
-    color: '#64748b',
-    marginLeft: 6,
+  apiKeyInput: {
+    fontFamily: Platform.OS === 'ios' ? 'Courier' : 'monospace',
+    fontSize: 13,
+    color: '#e2e8f0',
+    paddingVertical: 12,
+    paddingHorizontal: 12,
   },
   saveButtonContainer: {
     paddingHorizontal: 20,

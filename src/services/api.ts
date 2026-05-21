@@ -1,6 +1,5 @@
 import { Message, ModelType } from '../types';
 
-const OPENROUTER_API_KEY = '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';
 const OPENROUTER_URL = 'https://openrouter.ai/api/v1/chat/completions';
 
 export interface SendMessageOptions {
@@ -8,6 +7,7 @@ export interface SendMessageOptions {
   messages: Message[];
   systemPrompt?: string;
   attachedImageBase64?: string; // The base64 data for the image being sent right now
+  apiKey: string; // User-provided API key
 }
 
 export async function sendMessageToTuncayAI({
@@ -15,6 +15,7 @@ export async function sendMessageToTuncayAI({
   messages,
   systemPrompt,
   attachedImageBase64,
+  apiKey,
 }: SendMessageOptions): Promise<{ content: string; isImage?: boolean }> {
   try {
     const apiMessages: any[] = [];
@@ -73,7 +74,7 @@ export async function sendMessageToTuncayAI({
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
-        'Authorization': `Bearer ${OPENROUTER_API_KEY}`,
+        'Authorization': `Bearer ${apiKey}`,
         'HTTP-Referer': 'https://expo.dev',
         'X-Title': 'Tuncay AI Chat Client',
       },
