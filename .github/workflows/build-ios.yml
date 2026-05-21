@@ -1,23 +1,27 @@
-name: Build Unsigned iOS IPASG
+name: Build Unsigned iOS IPA
 
 on:
   push:
     branches:
       - main
       - master
+
   pull_request:
     branches:
       - main
       - master
-  workflow_dispatch: # Allows manual trigger from GitHub UI
+
+  workflow_dispatch:
 
 jobs:
   build:
     name: Build Unsigned IPA
-    runs-on: macos-14 # macOS 14 runner includes Apple Silicon and modern Xcode versions
+    runs-on: macos-14
+
     env:
-      ACTIONS_ALLOW_USE_UNSECURE_NODE_VERSION: true
-    
+      FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
+      EXPO_NO_TELEMETRY: 1
+
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
@@ -26,44 +30,56 @@ jobs:
         uses: actions/setup-node@v4
         with:
           node-version: 20
-          cache: 'npm'
+          cache: npm
 
       - name: Install dependencies
         run: npm install
 
-      - name: Cache CocoaPods
-        uses: actions/cache@v4
-        with:
-          path: ios/Pods
-          key: ${{ runner.os }}-pods-${{ hashFiles('ios/Podfile.lock') }}
-          restore-keys: |
-            ${{ runner.os }}-pods-
+      - name: Generate iOS project files
+        run: npx expo prebuild --platform ios --clean
 
-      - name: Generate iOS project files (Expo Prebuild)
-        run: npx expo prebuild --platform ios
-        env:
-          EXPO_NO_TELEMETRY: 1
+      - name: Install CocoaPods
+        run: |
+          cd ios
+          pod install
+
+      - name: Show available schemes
+        run: |
+          cd ios
+          xcodebuild -list
 
       - name: Build iOS Application (Unsigned)
         run: |
-          WORKSPACE=$(ls -d ios/*.xcworkspace | head -n 1)
-          SCHEME=$(basename "$WORKSPACE" .xcworkspace)
-          echo "Building Workspace: $WORKSPACE with Scheme: $SCHEME"
-          xcodebuild -workspace "$WORKSPACE" \
-                     -scheme "$SCHEME" \
-                     -configuration Release \
-                     -sdk iphoneos \
-                     -derivedDataPath build \
-                     CODE_SIGNING_ALLOWED=NO \
-                     CODE_SIGNING_REQUIRED=NO \
-                     clean build
-          
-      - name: Create Unsigned IPA Package
+          cd ios
+
+          WORKSPACE=$(find . -name "*.xcworkspace" | head -n 1)
+
+          SCHEME=$(xcodebuild -list -workspace "$WORKSPACE" | awk '/Schemes:/ {getline; print $1}')
+
+          echo "Workspace: $WORKSPACE"
+          echo "Scheme: $SCHEME"
+
+          xcodebuild \
+            -workspace "$WORKSPACE" \
+            -scheme "$SCHEME" \
+            -configuration Release \
+            -sdk iphoneos \
+            -derivedDataPath ../build \
+            CODE_SIGNING_ALLOWED=NO \
+            CODE_SIGNING_REQUIRED=NO \
+            CODE_SIGN_IDENTITY="" \
+            clean build
+
+      - name: Create IPA
         run: |
-          mkdir -p Payload
-          cp -R build/Build/Products/Release-iphoneos/*.app Payload/
+          mkdir Payload
+
+          APP_PATH=$(find build/Build/Products/Release-iphoneos -name "*.app" | head -n 1)
+
+          cp -R "$APP_PATH" Payload/
+
           zip -r TuncayAI.ipa Payload
-          
+
       - name: Upload IPA Artifact
         uses: actions/upload-artifact@v4
         with:
