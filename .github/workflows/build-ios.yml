@@ -55,34 +55,32 @@ jobs:
           cd ios
           xcodebuild -list
 
-      - name: Build iOS Application (Unsigned)
+      - name: Build iOS Application (Archive)
         run: |
           cd ios
 
           WORKSPACE=$(find . -name "*.xcworkspace" | head -n 1)
-
-          SCHEME=$(xcodebuild -list -workspace "$WORKSPACE" | awk '/Schemes:/ {getline; print $1}')
+          SCHEME=$(basename "$WORKSPACE" .xcworkspace)
 
           echo "Workspace: $WORKSPACE"
           echo "Scheme: $SCHEME"
 
-          xcodebuild \
+          xcodebuild archive \
             -workspace "$WORKSPACE" \
             -scheme "$SCHEME" \
             -configuration Release \
             -sdk iphoneos \
-            -derivedDataPath ../build \
+            -archivePath ../build/TuncayAI.xcarchive \
             CODE_SIGNING_ALLOWED=NO \
             CODE_SIGNING_REQUIRED=NO \
             CODE_SIGN_IDENTITY="" \
-            DEVELOPMENT_TEAM="" \
-            clean build
+            DEVELOPMENT_TEAM=""
 
       - name: Create IPA
         run: |
           mkdir -p Payload
 
-          APP_PATH=$(find . -type d -name "*.app" | grep -v "Pods" | head -n 1)
+          APP_PATH=$(find build/TuncayAI.xcarchive/Products/Applications -type d -name "*.app" | head -n 1)
 
           echo "App Path: $APP_PATH"
 
