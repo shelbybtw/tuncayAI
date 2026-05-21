@@ -27,6 +27,15 @@
     },
     "web": {
       "favicon": "./assets/favicon.png"
-    }
+    },
+    "plugins": [
+      [
+        "expo-image-picker",
+        {
+          "photosPermission": "Tuncay AI şəkillərinizi analiz etmək üçün qalereyanıza giriş istəyir.",
+          "cameraPermission": "Tuncay AI şəkil çəkmək üçün kameranıza giriş istəyir."
+        }
+      ]
+    ]
   }
 }
