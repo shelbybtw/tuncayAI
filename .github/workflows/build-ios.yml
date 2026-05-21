@@ -16,7 +16,7 @@ jobs:
     name: Build Unsigned IPA
     runs-on: macos-14 # macOS 14 runner includes Apple Silicon and modern Xcode versions
     env:
-      FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
+      ACTIONS_ALLOW_USE_UNSECURE_NODE_VERSION: true
     
     steps:
       - name: Checkout repository
@@ -25,7 +25,7 @@ jobs:
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
-          node-version: 24
+          node-version: 20
           cache: 'npm'
 
       - name: Install dependencies
@@ -46,22 +46,18 @@ jobs:
 
       - name: Build iOS Application (Unsigned)
         run: |
-          WORKSPACE=$(find ios -maxdepth 1 -name "*.xcworkspace" | head -n 1)
-          SCHEME=$(xcodebuild -workspace "$WORKSPACE" -list | grep -A 1 "Schemes:" | tail -n 1 | xargs)
-          echo "Building workspace: $WORKSPACE with scheme: $SCHEME"
-          xcodebuild -workspace "$WORKSPACE" \
-                     -scheme "$SCHEME" \
-                     -configuration Release \
+          cd ios
+          xcodebuild -configuration Release \
                      -sdk iphoneos \
-                     -derivedDataPath build \
+                     -derivedDataPath ../build \
                      CODE_SIGNING_ALLOWED=NO \
                      CODE_SIGNING_REQUIRED=NO \
                      clean build
-
+          
       - name: Create Unsigned IPA Package
         run: |
           mkdir -p Payload
-          cp -R build/Build/Products/Release-iphoneos/TuncayAI.app Payload/
+          cp -R build/Build/Products/Release-iphoneos/*.app Payload/
           zip -r TuncayAI.ipa Payload
           
       - name: Upload IPA Artifact
